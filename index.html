@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Local-first web app for MapleStory Idle RPG PvP. Log fights, flag evasion builds, and scout any username for an AVOID / CAUTION / FAVORABLE verdict before you challenge.">
-<meta name="theme-color" content="#0c0f16">
+<meta name="theme-color" content="#151619">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Leaf Ledger · MapleStory Idle RPG PvP">
 <meta property="og:description" content="Scout a username before you challenge. Log fights, flag evasion builds, get an AVOID / CAUTION / FAVORABLE verdict.">
@@ -16,11 +16,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0c0f16; --bg-2: #11151f; --panel: #161b27; --panel-2: #1c2230;
-    --border: #28303f; --border-bright: #3a4459;
-    --text: #e7ecf3; --text-dim: #93a0b4; --text-faint: #828fa4;
-    --amber: #ff8a3d; --amber-soft: #ffb27a;
-    --win: #3fb950; --loss: #f85149; --loss-bright: #ff6f66; --caution: #e3b341;
+    /* Palette primed from MapleStory Idle Arena UI stills (2026-08): neutral
+       charcoal chrome, cyan interactive accent, gold for rank/evasion, lime
+       win, arena red loss. The purple arena mood lives only on the decorative
+       gradient layer below. All text pairs validated at WCAG AA. */
+    --bg: #151619; --bg-2: #1b1d21; --panel: #232529; --panel-2: #2b2e34;
+    --border: #3a3d44; --border-bright: #4c5058;
+    --text: #eef0f3; --text-dim: #a6adb5; --text-faint: #939aa2;
+    --accent: #38c6de; --accent-soft: #7edced;
+    --win: #93cf46; --loss: #f0413e; --loss-bright: #ff7a73; --gold: #e6bd4a;
     --shadow: 0 18px 40px -18px rgba(0,0,0,0.7);
     --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --display: 'Bricolage Grotesque', system-ui, sans-serif;
@@ -37,8 +41,8 @@
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background:
-      radial-gradient(900px 500px at 85% -10%, rgba(255,138,61,0.10), transparent 60%),
-      radial-gradient(700px 600px at -5% 110%, rgba(63,185,80,0.06), transparent 55%);
+      radial-gradient(900px 500px at 85% -10%, rgba(96,74,180,0.14), transparent 60%),
+      radial-gradient(700px 600px at -5% 110%, rgba(56,198,222,0.05), transparent 55%);
   }
   body::after {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
@@ -49,9 +53,9 @@
 
   header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
   .brand { display: flex; flex-direction: column; gap: 4px; }
-  .brand .kicker { font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--amber); font-weight: 700; }
+  .brand .kicker { font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
   .brand h1 { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 4vw, 40px); line-height: 1.0; letter-spacing: -0.01em; }
-  .brand h1 span { color: var(--amber); }
+  .brand h1 span { color: var(--accent); }
   .brand p { color: var(--text-dim); font-size: 12.5px; max-width: 440px; margin-top: 6px; }
 
   .stats { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -59,27 +63,27 @@
   .stat .num { font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1; }
   .stat .lbl { font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); margin-top: 5px; }
   .stat.danger .num { color: var(--loss); }
-  .stat.evade .num { color: var(--amber); }
+  .stat.evade .num { color: var(--gold); }
 
   .search-wrap { margin: 24px 0 16px; position: relative; }
   .search-wrap svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; stroke: var(--text-faint); }
   #search { width: 100%; font-family: var(--mono); font-size: 16px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px 16px 48px; outline: none; transition: border-color .15s, box-shadow .15s; }
   input::placeholder, textarea::placeholder { color: var(--text-faint); }
-  #search:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(255,138,61,0.14); }
+  #search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,198,222,0.14); }
 
   #scout { display: none; flex-direction: column; gap: 10px; margin-bottom: 22px; }
   .verdict { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--border); border-left-width: 4px; border-radius: 10px; padding: 14px 16px; }
   .verdict.avoid { border-left-color: var(--loss); }
-  .verdict.caution { border-left-color: var(--caution); }
+  .verdict.caution { border-left-color: var(--gold); }
   .verdict.favorable { border-left-color: var(--win); }
   .verdict .badge { font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: 0.14em; padding: 6px 12px; border-radius: 6px; text-transform: uppercase; white-space: nowrap; }
-  .verdict.avoid .badge { background: rgba(248,81,73,0.16); color: var(--loss-bright); }
-  .verdict.caution .badge { background: rgba(227,179,65,0.16); color: var(--caution); }
-  .verdict.favorable .badge { background: rgba(63,185,80,0.16); color: var(--win); }
+  .verdict.avoid .badge { background: rgba(240,65,62,0.16); color: var(--loss-bright); }
+  .verdict.caution .badge { background: rgba(230,189,74,0.16); color: var(--gold); }
+  .verdict.favorable .badge { background: rgba(147,207,70,0.16); color: var(--win); }
   .verdict .who { font-weight: 700; color: var(--text); }
-  .verdict .who b { color: var(--amber-soft); }
+  .verdict .who b { color: var(--accent-soft); }
   .verdict .meta { color: var(--text-dim); font-size: 12.5px; }
-  .verdict .meta b.l { color: var(--loss); } .verdict .meta b.w { color: var(--win); } .verdict .meta b.e { color: var(--amber); }
+  .verdict .meta b.l { color: var(--loss-bright); } .verdict .meta b.w { color: var(--win); } .verdict .meta b.e { color: var(--gold); }
 
   .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
   .grid > .card { min-width: 0; } /* let the 1fr card shrink so the table scrolls inside it instead of overflowing the page */
@@ -91,7 +95,7 @@
   .card-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
   .card-toggle .chev { color: var(--text-faint); transition: transform .2s ease; flex: none; }
   .card-toggle:hover .chev { color: var(--text-dim); }
-  .card-toggle:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 4px; }
+  .card-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
   #logCard.collapsed .card-toggle .chev { transform: rotate(-90deg); }
   #logCard.collapsed h2 { border-bottom-color: transparent; }
   .card-body { overflow: hidden; transition: max-height .26s ease; }
@@ -100,12 +104,12 @@
   form { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; }
   .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .field label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
-  .field label .req { color: var(--amber); }
+  .field label .req { color: var(--accent); }
   input[type=text], input[type=number], input[type=date], textarea, select {
     width: 100%; min-width: 0; font-family: var(--mono); font-size: 13.5px; color: var(--text);
     background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color .15s;
   }
-  input:focus, textarea:focus, select:focus { border-color: var(--amber); }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 44px; }
   select { cursor: pointer; appearance: none; padding-right: 30px; }
   /* Chevron lives on the wrapper, not the select's own background-image, so the select
@@ -114,7 +118,7 @@
   .select-wrap::after {
     content: ""; position: absolute; top: 50%; right: 11px; width: 12px; height: 12px;
     transform: translateY(-50%); pointer-events: none;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2393a0b4' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat center;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23a6adb5' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat center;
   }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
   .date-row { display: flex; gap: 8px; }
@@ -123,25 +127,25 @@
 
   .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .seg button { font-family: var(--mono); font-weight: 700; font-size: 13px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text-dim); cursor: pointer; transition: all .12s; }
-  .seg button[aria-pressed=true][data-out=win] { background: rgba(63,185,80,0.16); border-color: var(--win); color: var(--win); }
-  .seg button[aria-pressed=true][data-out=loss] { background: rgba(248,81,73,0.16); border-color: var(--loss); color: var(--loss); }
+  .seg button[aria-pressed=true][data-out=win] { background: rgba(147,207,70,0.16); border-color: var(--win); color: var(--win); }
+  .seg button[aria-pressed=true][data-out=loss] { background: rgba(240,65,62,0.16); border-color: var(--loss); color: var(--loss-bright); }
 
   .check { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; user-select: none; padding: 4px 0; }
-  .check input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--amber); flex: none; }
+  .check input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--accent); flex: none; }
   .check span { font-size: 12.5px; color: var(--text-dim); }
-  .check b { color: var(--amber); }
+  .check b { color: var(--gold); }
 
-  button.primary { font-family: var(--display); font-weight: 800; font-size: 14px; letter-spacing: 0.03em; background: var(--amber); color: #1a1206; border: none; border-radius: 9px; padding: 13px; cursor: pointer; transition: filter .12s, transform .05s; }
+  button.primary { font-family: var(--display); font-weight: 800; font-size: 14px; letter-spacing: 0.03em; background: var(--accent); color: #0c191d; border: none; border-radius: 9px; padding: 13px; cursor: pointer; transition: filter .12s, transform .05s; }
   button.primary:hover { filter: brightness(1.08); }
   button.primary:active { transform: translateY(1px); }
   button.ghost { font-family: var(--mono); font-size: 12px; background: transparent; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; cursor: pointer; transition: all .12s; white-space: nowrap; }
   button.ghost:hover { border-color: var(--border-bright); color: var(--text); }
-  button.ghost.linked { color: var(--win); border-color: rgba(63,185,80,0.4); }
+  button.ghost.linked { color: var(--win); border-color: rgba(147,207,70,0.4); }
 
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border); align-items: center; }
   .filters { display: flex; gap: 6px; }
   .filters button { font-family: var(--mono); font-size: 11.5px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text-dim); cursor: pointer; transition: all .12s; }
-  .filters button.active { background: var(--amber); border-color: var(--amber); color: #1a1206; font-weight: 700; }
+  .filters button.active { background: var(--accent); border-color: var(--accent); color: #0c191d; font-weight: 700; }
   .toolbar .spacer { flex: 1; }
   .io { display: flex; gap: 6px; align-items: center; }
   .exportwrap { position: relative; }
@@ -154,18 +158,18 @@
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   thead th { text-align: left; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); font-weight: 500; padding: 11px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
   thead th:hover { color: var(--text-dim); }
-  thead th:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; color: var(--text-dim); }
+  thead th:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; color: var(--text-dim); }
   thead th .arrow { display: inline-block; width: 0; height: 0; margin-left: 5px; vertical-align: middle; border-left: 4px solid transparent; border-right: 4px solid transparent; }
-  thead th .arrow.asc { border-bottom: 5px solid var(--amber); }
-  thead th .arrow.desc { border-top: 5px solid var(--amber); }
+  thead th .arrow.asc { border-bottom: 5px solid var(--accent); }
+  thead th .arrow.desc { border-top: 5px solid var(--accent); }
   tbody td { padding: 11px 14px; border-bottom: 1px solid rgba(40,48,63,0.5); vertical-align: middle; }
   tbody tr:hover { background: var(--panel-2); }
-  tbody tr.flagged { background: rgba(255,138,61,0.04); }
+  tbody tr.flagged { background: rgba(230,189,74,0.05); }
   .uname { font-weight: 700; color: var(--text); }
   .pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: 0.04em; }
-  .pill.win { background: rgba(63,185,80,0.15); color: var(--win); }
-  .pill.loss { background: rgba(248,81,73,0.15); color: var(--loss-bright); }
-  .pill.evade { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,138,61,0.15); color: var(--amber); vertical-align: middle; }
+  .pill.win { background: rgba(147,207,70,0.15); color: var(--win); }
+  .pill.loss { background: rgba(240,65,62,0.15); color: var(--loss-bright); }
+  .pill.evade { display: inline-flex; align-items: center; gap: 4px; background: rgba(230,189,74,0.15); color: var(--gold); vertical-align: middle; }
   .pill.evade svg { width: 11px; height: 11px; flex: none; }
   .muted { color: var(--text-faint); }
   .miss { color: var(--text-faint); font-style: italic; }
@@ -173,7 +177,7 @@
   .actions { display: flex; gap: 6px; }
   .iconbtn { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; padding: 4px 8px; font-family: var(--mono); font-size: 11px; transition: all .12s; }
   .iconbtn:hover { color: var(--text); border-color: var(--border-bright); }
-  .iconbtn.del:hover { color: var(--loss); border-color: var(--loss); }
+  .iconbtn.del:hover { color: var(--loss-bright); border-color: var(--loss); }
 
   .empty { padding: 48px 20px; text-align: center; color: var(--text-faint); }
   .empty .big { font-family: var(--display); font-size: 17px; color: var(--text-dim); margin-bottom: 6px; }
@@ -185,18 +189,18 @@
   details.note summary:hover .chev { color: var(--text-dim); }
   details.note[open] summary .chev { transform: rotate(0deg); }
   details.note .body { padding: 0 16px 16px; font-size: 12.5px; color: var(--text-dim); line-height: 1.65; }
-  details.note .body code { background: var(--bg-2); padding: 1px 5px; border-radius: 4px; color: var(--amber-soft); }
+  details.note .body code { background: var(--bg-2); padding: 1px 5px; border-radius: 4px; color: var(--accent-soft); }
 
   footer { margin-top: 36px; text-align: center; font-size: 11.5px; color: var(--text-faint); line-height: 1.7; }
   footer p { margin: 2px 0; }
   footer a { color: var(--text-dim); }
   footer a:hover { color: var(--text); }
   footer .foot-links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 9px; }
-  footer .foot-links a { color: var(--amber-soft); text-decoration: none; font-size: 12.5px; }
-  footer .foot-links a:hover { color: var(--amber); text-decoration: underline; }
+  footer .foot-links a { color: var(--accent-soft); text-decoration: none; font-size: 12.5px; }
+  footer .foot-links a:hover { color: var(--accent); text-decoration: underline; }
   footer .foot-links .sep { color: var(--text-faint); }
 
-  .editing-banner { display: none; background: rgba(255,138,61,0.12); border: 1px solid var(--amber); color: var(--amber-soft); font-size: 11.5px; padding: 8px 11px; border-radius: 8px; }
+  .editing-banner { display: none; background: rgba(56,198,222,0.12); border: 1px solid var(--accent); color: var(--accent-soft); font-size: 11.5px; padding: 8px 11px; border-radius: 8px; }
 </style>
 </head>
 <body>
@@ -717,7 +721,7 @@
     const matches = records.filter((r) => unameKey(r).includes(q));
     if (!matches.length) {
       box.style.display = "flex";
-      box.innerHTML = '<div class="verdict favorable"><span class="badge" style="background:rgba(147,160,180,0.16);color:var(--text-dim)">NO RECORD</span>'
+      box.innerHTML = '<div class="verdict favorable"><span class="badge" style="background:rgba(166,173,181,0.16);color:var(--text-dim)">NO RECORD</span>'
         + '<span class="who">No logged matches against <b>' + esc(q) + "</b>.</span>"
         + '<span class="meta">First time seeing this name, as far as your log knows.</span></div>';
       return;
@@ -744,7 +748,7 @@
         const verdict = !known ? "" : g.l > 0 ? "avoid" : (g.e > 0 ? "caution" : "favorable");
         const badge = known
           ? '<span class="badge">' + (verdict === "avoid" ? "AVOID" : (verdict === "caution" ? "CAUTION" : "FAVORABLE")) + "</span>"
-          : '<span class="badge" style="background:rgba(147,160,180,0.16);color:var(--text-dim)">UNKNOWN</span>';
+          : '<span class="badge" style="background:rgba(166,173,181,0.16);color:var(--text-dim)">UNKNOWN</span>';
         const meta = '<span class="meta"><b class="w">' + g.w + "W</b> · <b class=\"l\">" + g.l + "L</b>"
           + (g.u ? " · " + g.u + " unknown result" + (g.u > 1 ? "s" : "") : "")
           + (g.e ? ' · <b class="e">' + g.e + " evasion-flag" + (g.e > 1 ? "s" : "") + "</b>" : "")
