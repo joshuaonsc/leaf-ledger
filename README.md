@@ -3,10 +3,10 @@
 **Scout your next PvP opponent before you challenge.** A **local-first web app** for tracking MapleStory Idle RPG PvP.
 
 [![checks](https://github.com/joshuaonsc/leaf-ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/joshuaonsc/leaf-ledger/actions/workflows/ci.yml)
-![License: MIT](https://img.shields.io/badge/license-MIT-ff8a3d.svg)
-![Dependencies: none](https://img.shields.io/badge/dependencies-none-3fb950.svg)
-![Built with vanilla JS](https://img.shields.io/badge/built%20with-vanilla%20JS-e3b341.svg)
-![No build step](https://img.shields.io/badge/build-none-93a0b4.svg)
+![License: MIT](https://img.shields.io/badge/license-MIT-38c6de.svg)
+![Dependencies: none](https://img.shields.io/badge/dependencies-none-93cf46.svg)
+![Built with vanilla JS](https://img.shields.io/badge/built%20with-vanilla%20JS-e6bd4a.svg)
+![No build step](https://img.shields.io/badge/build-none-a6adb5.svg)
 
 Late-game, an opponent's combat power stops telling you whether they've stacked **evasion**, and an evasion build can make your hits whiff for an unwinnable fight. The only reliable signal is empirical: did you beat this person before, or did your hits miss? This tool records that, then gives you a one-glance verdict the next time their name comes up in the queue.
 
