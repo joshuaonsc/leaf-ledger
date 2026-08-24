@@ -240,17 +240,17 @@
 
         <div class="row2">
           <div class="field">
-            <label for="f_class">Class <span class="req">*</span></label>
-            <div class="select-wrap"><select id="f_class" required></select></div>
+            <label for="f_class">Class</label>
+            <div class="select-wrap"><select id="f_class"></select></div>
           </div>
           <div class="field">
-            <label for="f_level">Level <span class="req">*</span></label>
-            <input type="number" id="f_level" min="0" required>
+            <label for="f_level">Level</label>
+            <input type="number" id="f_level" min="0">
           </div>
         </div>
 
         <div class="field">
-          <label id="lbl-result">Result <span class="req">*</span></label>
+          <label id="lbl-result">Result</label>
           <div class="seg" role="group" aria-labelledby="lbl-result">
             <button type="button" data-out="win" aria-pressed="false">WON</button>
             <button type="button" data-out="loss" aria-pressed="false">LOST</button>
@@ -258,9 +258,9 @@
         </div>
 
         <div class="field">
-          <label for="f_date">Date <span class="req">*</span></label>
+          <label for="f_date">Date</label>
           <div class="date-row">
-            <input type="date" id="f_date" required>
+            <input type="date" id="f_date">
             <button type="button" class="ghost" id="todayBtn" title="Set date to today">Today</button>
           </div>
         </div>
@@ -408,6 +408,8 @@
   }
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // Defensive: never assume username is a string (legacy/hand-edited data).
+  const unameKey = (r) => String(r.username == null ? "" : r.username).toLowerCase();
 
   // Parse a combat-power string into a number for sorting only.
   // Handles "1087", "1,087", "3 T 42 B", "1.5T", "900M", etc.
@@ -444,14 +446,102 @@
   // A search like "unknown" / "missing" (or prefixes "unk", "mis") surfaces any row with missing data.
   const isMissingQuery = (q) => q.length >= 3 && ("unknown".startsWith(q) || "missing".startsWith(q));
 
+  /* ---------- record validation (shared by form save, import, linked file) ---------- */
+  // Boundary rule: absent fields (missing, null, or empty) get the missing-data
+  // sentinels, since absence is legitimate sparse data; present fields must
+  // carry exactly the types Export writes (no cross-type coercion, the app only
+  // supports files it wrote itself) or the record rejects. Unknown extra fields
+  // pass through untouched so older versions stay safe carriers of newer data.
+  // Offending values are echoed through plain-text alert() only; anything ever
+  // rendered into the DOM must pass esc().
+  function fmtVal(v) {
+    let s;
+    try { s = JSON.stringify(v); } catch (err) { s = String(v); }
+    if (s === undefined) s = String(v);
+    return s.length > 60 ? s.slice(0, 57) + "..." : s;
+  }
+  function normalizeRecord(raw) {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+      return { record: null, problems: ["record is " + fmtVal(raw) + ", expected an object"] };
+    }
+    const problems = [];
+    const bad = (field, v, expected) => problems.push(field + " is " + fmtVal(v) + ", expected " + expected);
+    const absent = (v) => v === undefined || v === null || v === "";
+    const record = { ...raw }; // spread, not Object.assign: a "__proto__" key stays inert
+    const setText = (field) => {
+      const v = raw[field];
+      if (absent(v)) record[field] = "";
+      else if (typeof v === "string") record[field] = v.trim();
+      else bad(field, v, "text");
+    };
+
+    if (absent(raw.id)) record.id = uid();
+    else if (typeof raw.id === "string") record.id = raw.id;
+    else bad("id", raw.id, "an id string");
+
+    if (absent(raw.username) || (typeof raw.username === "string" && !raw.username.trim())) {
+      problems.push("username is missing");
+    } else if (typeof raw.username !== "string") {
+      bad("username", raw.username, "a name");
+    } else {
+      record.username = raw.username.trim();
+    }
+
+    if (absent(raw.outcome)) problems.push('outcome is missing, expected "win" or "loss"');
+    else if (raw.outcome !== "win" && raw.outcome !== "loss") bad("outcome", raw.outcome, '"win" or "loss"');
+    else record.outcome = raw.outcome;
+
+    if (absent(raw.className)) record.className = "Unknown";
+    else if (typeof raw.className !== "string") bad("className", raw.className, "a class name");
+    else record.className = raw.className.trim() || "Unknown";
+
+    if (absent(raw.level)) record.level = 0;
+    else if (Number.isInteger(raw.level) && raw.level >= 0) record.level = raw.level;
+    else bad("level", raw.level, "a whole number, 0 or more");
+
+    if (absent(raw.date)) record.date = UNKNOWN_DATE;
+    else if (typeof raw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.date)) record.date = raw.date;
+    else bad("date", raw.date, "a YYYY-MM-DD date");
+
+    if (absent(raw.evasion)) record.evasion = false;
+    else if (typeof raw.evasion === "boolean") record.evasion = raw.evasion;
+    else bad("evasion", raw.evasion, "true or false");
+
+    setText("cp"); setText("companions"); setText("notes");
+
+    if (absent(raw.createdAt)) record.createdAt = new Date().toISOString();
+    else if (typeof raw.createdAt === "string") record.createdAt = raw.createdAt;
+    else bad("createdAt", raw.createdAt, "a timestamp string");
+
+    return { record: problems.length ? null : record, problems };
+  }
+  // Validate a whole incoming array, all-or-nothing: one bad record rejects the batch.
+  function validateAll(arr) {
+    const clean = [], problems = [];
+    arr.forEach((raw, i) => {
+      const res = normalizeRecord(raw);
+      if (res.problems.length) {
+        const who = raw && typeof raw.username === "string" && raw.username.trim()
+          ? ' ("' + raw.username.trim().slice(0, 40) + '")' : "";
+        res.problems.forEach((p) => problems.push("Record " + (i + 1) + who + ": " + p));
+      } else {
+        clean.push(res.record);
+      }
+    });
+    return { clean, problems };
+  }
+  function problemReport(problems) {
+    const shown = problems.slice(0, 10);
+    const more = problems.length - shown.length;
+    return shown.join("\n") + (more > 0 ? "\n...and " + more + " more problem" + (more > 1 ? "s" : "") : "");
+  }
+
   function mergeInto(base, incoming) {
+    // Incoming records are already normalized; merge by id, skipping duplicates.
     const ids = new Set(base.map((r) => r.id));
     let added = 0;
     incoming.forEach((r) => {
-      if (r && r.username) {
-        if (!r.id) r.id = uid();
-        if (!ids.has(r.id)) { base.push(r); ids.add(r.id); added++; }
-      }
+      if (!ids.has(r.id)) { base.push(r); ids.add(r.id); added++; }
     });
     return added;
   }
@@ -476,6 +566,12 @@
 
   document.querySelectorAll(".seg button").forEach((b) => {
     b.addEventListener("click", () => setOutcomeUI(b.dataset.out));
+    // Quick-add: after clicking WON/LOST, focus sits on that button and Enter
+    // would re-activate it instead of submitting. Once a result is selected,
+    // Enter submits; Space still (re)selects. Focus is never moved for the user.
+    b.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && outcome) { e.preventDefault(); $("#form").requestSubmit(); }
+    });
   });
   function setOutcomeUI(val) {
     outcome = val;
@@ -533,16 +629,18 @@
   $("#form").addEventListener("submit", (e) => {
     e.preventDefault();
     const username = $("#f_username").value.trim();
-    const className = $("#f_class").value;
-    const level = parseInt($("#f_level").value, 10);
     if (!username) return alert("Username is required.");
-    if (!className) return alert("Pick a class.");
-    if (!Number.isFinite(level)) return alert("Level is required.");
     if (!outcome) return alert("Pick a result: WON or LOST.");
 
-    const rec = {
+    // Quick-add: only username and result are required. Empty class and level
+    // save as the missing-data sentinels (Unknown / 0); empty date as today.
+    const levelRaw = $("#f_level").value.trim();
+    const { record: rec, problems } = normalizeRecord({
       id: editingId || uid(),
-      username, className, level, outcome,
+      username,
+      className: $("#f_class").value,
+      level: levelRaw === "" ? 0 : parseInt(levelRaw, 10),
+      outcome,
       date: $("#f_date").value || todayStr(),
       evasion: $("#f_evasion").checked,
       cp: $("#f_cp").value.trim(),            // stored as a string
@@ -551,7 +649,8 @@
       createdAt: editingId
         ? (records.find((r) => r.id === editingId) || {}).createdAt || new Date().toISOString()
         : new Date().toISOString()
-    };
+    });
+    if (problems.length) return alert("Could not save:\n" + problems.join("\n"));
 
     if (editingId) {
       const i = records.findIndex((r) => r.id === editingId);
@@ -588,7 +687,8 @@
   function del(id) {
     const r = records.find((x) => x.id === id);
     if (!r) return;
-    if (!confirm("Delete the " + (r.outcome === "win" ? "win" : "loss") + " vs " + r.username + "?")) return;
+    const what = r.outcome === "win" ? "win" : r.outcome === "loss" ? "loss" : "match";
+    if (!confirm("Delete the " + what + " vs " + r.username + "?")) return;
     records = records.filter((x) => x.id !== id);
     if (editingId === id) resetForm();
     save(); render();
@@ -614,7 +714,7 @@
   function renderScout(q) {
     const box = $("#scout");
     if (!q) { box.style.display = "none"; box.innerHTML = ""; return; }
-    const matches = records.filter((r) => r.username.toLowerCase().includes(q));
+    const matches = records.filter((r) => unameKey(r).includes(q));
     if (!matches.length) {
       box.style.display = "flex";
       box.innerHTML = '<div class="verdict favorable"><span class="badge" style="background:rgba(147,160,180,0.16);color:var(--text-dim)">NO RECORD</span>'
@@ -624,9 +724,13 @@
     }
     const groups = {};
     matches.forEach((r) => {
-      const k = r.username.toLowerCase();
-      (groups[k] = groups[k] || { name: r.username, w: 0, l: 0, e: 0, last: "" }).name = r.username;
-      if (r.outcome === "win") groups[k].w++; else groups[k].l++;
+      const k = unameKey(r);
+      (groups[k] = groups[k] || { name: r.username, w: 0, l: 0, u: 0, e: 0, last: "" }).name = r.username;
+      // Explicit outcome checks: an unrecognized outcome counts as neither win
+      // nor loss (never silently as a loss) and is surfaced in the meta line.
+      if (r.outcome === "win") groups[k].w++;
+      else if (r.outcome === "loss") groups[k].l++;
+      else groups[k].u++;
       if (r.evasion) groups[k].e++;
       if (r.date > groups[k].last) groups[k].last = r.date;
     });
@@ -635,13 +739,17 @@
       .sort((a, b) => (b.last || "").localeCompare(a.last || ""))
       .map((g) => {
         // Verdict tiers: any loss → AVOID; only wins but evasion seen → CAUTION; clean wins → FAVORABLE.
-        const verdict = g.l > 0 ? "avoid" : (g.e > 0 ? "caution" : "favorable");
-        const label = verdict === "avoid" ? "AVOID" : (verdict === "caution" ? "CAUTION" : "FAVORABLE");
+        // No readable outcome at all → a muted UNKNOWN chip (styled like NO RECORD), not a verdict.
+        const known = g.w + g.l > 0;
+        const verdict = !known ? "" : g.l > 0 ? "avoid" : (g.e > 0 ? "caution" : "favorable");
+        const badge = known
+          ? '<span class="badge">' + (verdict === "avoid" ? "AVOID" : (verdict === "caution" ? "CAUTION" : "FAVORABLE")) + "</span>"
+          : '<span class="badge" style="background:rgba(147,160,180,0.16);color:var(--text-dim)">UNKNOWN</span>';
         const meta = '<span class="meta"><b class="w">' + g.w + "W</b> · <b class=\"l\">" + g.l + "L</b>"
+          + (g.u ? " · " + g.u + " unknown result" + (g.u > 1 ? "s" : "") : "")
           + (g.e ? ' · <b class="e">' + g.e + " evasion-flag" + (g.e > 1 ? "s" : "") + "</b>" : "")
           + " · last " + esc(g.last) + "</span>";
-        return '<div class="verdict ' + verdict + '">'
-          + '<span class="badge">' + label + "</span>"
+        return '<div class="verdict ' + verdict + '">' + badge
           + '<span class="who">vs <b>' + esc(g.name) + "</b></span>" + meta + "</div>";
       }).join("");
   }
@@ -704,7 +812,7 @@
     if (q) {
       const miss = isMissingQuery(q);
       list = list.filter((r) =>
-        r.username.toLowerCase().includes(q) ||
+        unameKey(r).includes(q) ||
         classMatches(r.className, q) ||
         (miss && hasMissing(r)));
     }
@@ -738,7 +846,9 @@
         + '<td><span class="uname">' + esc(r.username) + "</span>" + sub + "</td>"
         + "<td>" + clsCell + "</td>"
         + "<td>" + lvlCell + "</td>"
-        + '<td><span class="pill ' + r.outcome + '">' + (r.outcome === "win" ? "WON" : "LOST") + "</span></td>"
+        + "<td>" + (r.outcome === "win" ? '<span class="pill win">WON</span>'
+            : r.outcome === "loss" ? '<span class="pill loss">LOST</span>'
+            : '<span class="miss">unknown</span>') + "</td>"
         + "<td>" + ev + "</td>"
         + "<td>" + cp + "</td>"
         + "<td>" + dateCell + "</td>"
@@ -755,9 +865,9 @@
   }
   function renderStats() {
     const total = records.length;
-    const players = new Set(records.map((r) => r.username.toLowerCase())).size;
+    const players = new Set(records.map(unameKey)).size;
     const losses = records.filter((r) => r.outcome === "loss").length;
-    const flagged = new Set(records.filter((r) => r.evasion).map((r) => r.username.toLowerCase())).size;
+    const flagged = new Set(records.filter((r) => r.evasion).map(unameKey)).size;
     $("#stats").innerHTML = stat(total, "Matches") + stat(players, "Players") + stat(losses, "Losses", "danger") + stat(flagged, "Evasion", "evade");
   }
 
@@ -792,9 +902,14 @@
       try {
         const arr = JSON.parse(reader.result);
         if (!Array.isArray(arr)) throw new Error("File is not a JSON array of records.");
-        const added = mergeInto(records, arr);
-        save(); render();
-        alert("Imported " + added + " new record(s). Existing IDs were skipped.");
+        const { clean, problems } = validateAll(arr);
+        if (problems.length) {
+          alert("Import rejected, nothing was merged:\n\n" + problemReport(problems));
+        } else {
+          const added = mergeInto(records, clean);
+          save(); render();
+          alert("Imported " + added + " new record(s). Existing IDs were skipped.");
+        }
       } catch (err) { alert("Import failed: " + err.message); }
       e.target.value = "";
     };
@@ -815,15 +930,28 @@
   async function idbDel(k) { const db = await idbDB(); return new Promise((res, rej) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").delete(k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); }); }
 
   async function readHandleInto(handle) {
+    // Merge the linked file's records into the log. Returns the number added,
+    // or -1 when the file was rejected (unreadable, invalid JSON, or bad
+    // records): callers must then abort linking so the file is not overwritten.
+    let arr;
     try {
       const f = await handle.getFile();
       const txt = (await f.text()).trim();
-      if (txt) {
-        const arr = JSON.parse(txt);
-        if (Array.isArray(arr)) return mergeInto(records, arr);
-      }
-    } catch (e) { console.warn("read db file failed", e); }
-    return 0;
+      if (!txt) return 0;
+      arr = JSON.parse(txt);
+      if (!Array.isArray(arr)) throw new Error("not a JSON array of records");
+    } catch (e) {
+      console.warn("read db file failed", e);
+      alert("Could not read " + handle.name + ": " + (e && e.message ? e.message : e) + "\nThe file was not linked.");
+      return -1;
+    }
+    const { clean, problems } = validateAll(arr);
+    if (problems.length) {
+      alert(handle.name + " rejected, nothing was merged:\n\n" + problemReport(problems)
+        + "\n\nThe file was not linked; fix it or pick another.");
+      return -1;
+    }
+    return mergeInto(records, clean);
   }
 
   async function writeDb() {
@@ -845,7 +973,7 @@
         suggestedName: "leafledger.json",
         types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
       });
-      await readHandleInto(handle); // merge any existing data first
+      if ((await readHandleInto(handle)) < 0) return; // rejected: link nothing, overwrite nothing
       dbHandle = handle;
       try { await idbSet("dbHandle", handle); } catch (e) {}
       await writeDb();
@@ -859,8 +987,8 @@
     try {
       const p = await handle.requestPermission({ mode: "readwrite" });
       if (p !== "granted") { alert("Permission denied for the DB file."); return; }
+      if ((await readHandleInto(handle)) < 0) return; // rejected: stay disconnected
       dbHandle = handle;
-      await readHandleInto(handle);
       save(); render(); renderIO();
     } catch (e) { alert("Reconnect failed: " + e.message); }
   }

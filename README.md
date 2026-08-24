@@ -35,9 +35,9 @@ No build step, no dependencies, no server. Either:
   - `CAUTION`: only wins on record, but at least one evasion flag. You've beaten them, but their build may have grown since, so it's no guarantee.
   - `FAVORABLE`: only wins, no evasion flags.
   - `NO RECORD`: not in your log.
-- **Log a Match (left):** username, class (dropdown of the 12 classes), level, and result are required. Combat power, companions, and notes are optional. The **evasion flag** marks fights where you saw MISS hit markers, the visible tell of an evasion build.
+- **Log a Match (left):** only username and result are required, so the fastest log is: type the name, click WON or LOST, press Enter. Class (dropdown of the 12 classes), level, and date are optional; left empty, class and level save as the missing-data sentinels (Unknown, 0) and the date falls back to today. Combat power, companions, and notes are optional too. The **evasion flag** marks fights where you saw MISS hit markers, the visible tell of an evasion build.
 - **Records table (right):** sortable columns, filters for losses-only and evasion-flagged-only, edit/delete per row.
-- **Export / Import:** Export writes a full-fidelity JSON file for backup, restore, and sharing; Import reads that JSON back, merging by record `id` and skipping duplicates.
+- **Export / Import:** Export writes a full-fidelity JSON file for backup, restore, and sharing; Import reads that JSON back, merging by record `id` and skipping duplicates. Imports are validated all-or-nothing: absent fields are fine (they save as the missing-data sentinels), but one malformed value rejects the whole file with a report of what and where, so a bad backup never half-imports.
 
 ### Combat power format
 
