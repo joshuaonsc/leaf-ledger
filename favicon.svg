@@ -2,40 +2,37 @@
   <title>Leaf Ledger · arena crest</title>
 
   <!-- ============================================================
-       Arena crest (monochrome, white-on-dark). Components are kept
-       separate and commented so each can be tweaked independently.
-       Palette:  tile/leaf-cutout #2b2f34 · shield #f4f6f8 ·
-                 swords #eef1f4 · edge/fuller #9aa3ad
-       NOTE: the leaf is a cutout; its fill must match the tile fill.
-       Alternative leaf + sword components are kept in .claude/icon-kit.html
+       Arena crest (white-on-dark), modeled on the in-game Arena
+       icon. Components are kept separate and commented so each can
+       be tweaked independently. Plain paths on the 64 grid.
+       Palette:  tile/gap/leaf-cutout #2b2f34 · blades + shield #f4f6f8 ·
+                 hilts #b9cccc
+       NOTE: the shield gap and the leaf are painted in the tile color,
+       so their fill must match the tile fill.
+       Shield rule: the border (2.38 wide) and the dark gap (2.82 wide)
+       each keep one width all the way round. The inner shield is the
+       border's inner edge moved in by the gap, so matching corner arcs
+       share a center.
        ============================================================ -->
 
   <!-- tile -->
   <rect width="64" height="64" rx="14" fill="#2b2f34"/>
 
-  <!-- crossed swords behind the shield (blade tips show above, hilts below) -->
-  <!-- sword A, rotated -45deg (tip to upper-left) -->
-  <g transform="rotate(-45 32 30)" fill="#eef1f4" stroke="#9aa3ad" stroke-width="0.5" stroke-linejoin="round">
-    <polygon points="32,6 33.8,15 33.4,44 30.6,44 30.2,15"/>            <!-- blade -->
-    <line x1="32" y1="10" x2="32" y2="43" stroke="#9aa3ad" stroke-width="0.6"/> <!-- fuller -->
-    <rect x="23" y="44" width="18" height="2.8" rx="1.2"/>              <!-- crossguard -->
-    <rect x="30.6" y="46.8" width="2.8" height="6.5" rx="0.9"/>         <!-- grip -->
-    <circle cx="32" cy="55" r="2.4"/>                                  <!-- pommel -->
-  </g>
-  <!-- sword B, rotated +45deg (tip to upper-right) -->
-  <g transform="rotate(45 32 30)" fill="#eef1f4" stroke="#9aa3ad" stroke-width="0.5" stroke-linejoin="round">
-    <polygon points="32,6 33.8,15 33.4,44 30.6,44 30.2,15"/>
-    <line x1="32" y1="10" x2="32" y2="43" stroke="#9aa3ad" stroke-width="0.6"/>
-    <rect x="23" y="44" width="18" height="2.8" rx="1.2"/>
-    <rect x="30.6" y="46.8" width="2.8" height="6.5" rx="0.9"/>
-    <circle cx="32" cy="55" r="2.4"/>
-  </g>
+  <!-- crossed swords behind the shield (blade ends show above, hilts below) -->
+  <!-- blades: broad bands at 45deg, the end cut flat on top and vertical on the outside -->
+  <path fill="#f4f6f8" d="M27.64 35.34 L10.86 18.56 L10.86 9.16 Q10.86 7.91 12.12 7.91 L17.64 7.91 L36.36 26.63 Z"/>
+  <path fill="#f4f6f8" d="M36.36 35.34 L53.14 18.56 L53.14 9.16 Q53.14 7.91 51.88 7.91 L46.36 7.91 L27.64 26.63 Z"/>
+  <!-- hilts: a stub that flares into a flat-ended foot -->
+  <path fill="#b9cccc" d="M26.71 41.48 L18.31 49.88 Q15.39 53.05 16.44 55.1 L15.7 55.85 L7.98 48.13 L8.73 47.39 Q10.78 48.44 13.95 45.52 L22.36 37.12 Z"/>
+  <path fill="#b9cccc" d="M37.29 41.48 L45.69 49.88 Q48.61 53.05 47.56 55.1 L48.3 55.85 L56.02 48.13 L55.27 47.39 Q53.22 48.44 50.05 45.52 L41.64 37.12 Z"/>
 
-  <!-- shield -->
-  <path d="M21 17 L43 17 L43 29 C43 39 38 44 32 47 C26 44 21 39 21 29 Z" fill="#f4f6f8"/>
+  <!-- shield border: the outer silhouette, sloping away from a small flat tab on its peak -->
+  <path fill="#f4f6f8" d="M29.52 12.58 L34.48 12.58 L35.34 15.15 L39.58 17.86 L50.35 17.86 L50.35 37.34 A11 11 0 0 1 45.58 46.4 L37.48 51.97 A9.68 9.68 0 0 1 26.52 51.97 L18.42 46.4 A11 11 0 0 1 13.65 37.34 L13.65 17.86 L24.42 17.86 L28.66 15.15 Z"/>
+  <!-- dark gap between the border and the inner shield (tile color) -->
+  <path fill="#2b2f34" d="M32 15.83 L38.88 20.23 L43.4 20.23 A4.58 4.58 0 0 1 47.97 24.81 L47.97 37.34 A8.62 8.62 0 0 1 44.23 44.45 L36.14 50.01 A7.3 7.3 0 0 1 27.86 50.01 L19.77 44.45 A8.62 8.62 0 0 1 16.03 37.34 L16.03 24.81 A4.58 4.58 0 0 1 20.6 20.23 L25.12 20.23 Z"/>
+  <!-- inner shield, corners rounded -->
+  <path fill="#f4f6f8" d="M32 19.18 L37.36 22.61 A2.82 2.82 0 0 0 38.88 23.05 L43.4 23.05 A1.76 1.76 0 0 1 45.16 24.81 L45.16 37.34 A5.81 5.81 0 0 1 42.64 42.13 L34.54 47.69 A4.49 4.49 0 0 1 29.46 47.69 L21.36 42.13 A5.81 5.81 0 0 1 18.84 37.34 L18.84 24.81 A1.76 1.76 0 0 1 20.6 23.05 L25.12 23.05 A2.82 2.82 0 0 0 26.64 22.61 Z"/>
 
-  <!-- maple leaf (5 lobes, prominent top, no stem), cut into the shield in the tile color.
-       Sized/centered via the transform; edit the path to reshape the leaf. -->
-  <path transform="translate(32 29) scale(0.72) translate(-32 -27.5)" fill="#2b2f34"
-        d="M32 15 C30.2 18 29.8 23.5 30.7 26.6 C27.6 23.4 24 21 20.5 20.8 C21.8 24.8 24.4 28 27.2 29.6 C24.8 29.4 22.6 30.2 22.2 31.3 C21.8 32.4 23.4 33.7 25.6 34.6 C23.8 36.4 23.2 38.6 24.2 40.2 C26.8 39 29.4 37.4 31 35.2 C31.1 36.8 31.4 37.8 32 38.8 C32.6 37.8 32.9 36.8 33 35.2 C34.6 37.4 37.2 39 39.8 40.2 C40.8 38.6 40.2 36.4 38.4 34.6 C40.6 33.7 42.2 32.4 41.8 31.3 C41.4 30.2 39.2 29.4 36.8 29.6 C39.6 28 42.2 24.8 43.5 20.8 C40 21 36.4 23.4 33.3 26.6 C34.2 23.5 33.8 18 32 15 Z"/>
+  <!-- maple leaf (5 points, prominent top, flat-topped side lobes), cut into the shield in the tile color -->
+  <path fill="#2b2f34" d="M32 22.08 L35.04 24.98 L35.04 29.96 L41.86 29.96 L42.65 31.32 L37.28 37.22 L38.16 40.12 L37.81 40.52 L34.29 40.52 L32 39.5 L29.71 40.52 L26.19 40.52 L25.84 40.12 L26.72 37.22 L21.35 31.32 L22.14 29.96 L28.96 29.96 L28.96 24.98 Z"/>
 </svg>
