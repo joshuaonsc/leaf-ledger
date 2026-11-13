@@ -53,7 +53,7 @@ Three values act as universal "missing data" sentinels: class **Unknown**, level
 
 ## Data & storage
 
-Data is stored in your browser's `localStorage` under the key `leafledger_v1`. It is **per-browser and per-origin**. That layer is always on and saves automatically on every change.
+Data is stored in your browser's `localStorage` under the key `leafledger_v1`. It is **per-browser and per-origin**. That layer is always on and saves automatically on every change. If a save ever fails, because storage is blocked or full or the linked file can't be written, a warning appears above the log with the reason and stays until saving works again.
 
 ### Autosave to a file on disk
 
