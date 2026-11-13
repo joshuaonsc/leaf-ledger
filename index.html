@@ -162,7 +162,7 @@
   thead th .arrow { display: inline-block; width: 0; height: 0; margin-left: 5px; vertical-align: middle; border-left: 4px solid transparent; border-right: 4px solid transparent; }
   thead th .arrow.asc { border-bottom: 5px solid var(--accent); }
   thead th .arrow.desc { border-top: 5px solid var(--accent); }
-  tbody td { padding: 11px 14px; border-bottom: 1px solid rgba(40,48,63,0.5); vertical-align: middle; }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid rgba(58,61,68,0.5); vertical-align: middle; }
   tbody tr:hover { background: var(--panel-2); }
   tbody tr.flagged { background: rgba(230,189,74,0.05); }
   .uname { font-weight: 700; color: var(--text); }
@@ -254,7 +254,7 @@
         </div>
 
         <div class="field">
-          <label id="lbl-result">Result</label>
+          <label id="lbl-result">Result <span class="req">*</span></label>
           <div class="seg" role="group" aria-labelledby="lbl-result">
             <button type="button" data-out="win" aria-pressed="false">WON</button>
             <button type="button" data-out="loss" aria-pressed="false">LOST</button>
@@ -571,10 +571,13 @@
   document.querySelectorAll(".seg button").forEach((b) => {
     b.addEventListener("click", () => setOutcomeUI(b.dataset.out));
     // Quick-add: after clicking WON/LOST, focus sits on that button and Enter
-    // would re-activate it instead of submitting. Once a result is selected,
-    // Enter submits; Space still (re)selects. Focus is never moved for the user.
+    // would re-activate it instead of submitting. So Enter on the selected
+    // button submits. On the other button Enter keeps its normal job and
+    // selects that result, so a keyboard correction never saves the wrong one.
+    // A held key does not count: saving always takes its own key press.
+    // Space still (re)selects. Focus is never moved for the user.
     b.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && outcome) { e.preventDefault(); $("#form").requestSubmit(); }
+      if (e.key === "Enter" && !e.repeat && b.dataset.out === outcome) { e.preventDefault(); $("#form").requestSubmit(); }
     });
   });
   function setOutcomeUI(val) {
