@@ -85,11 +85,15 @@ Optionally, click **Link DB file** to bind a `.json` file via the File System Ac
 
 ## Built with
 
-Vanilla HTML, CSS, and JavaScript: one ~800-line `index.html` plus a small SVG icon, no framework, no build step, no runtime dependencies. Storage is `localStorage` plus the optional File System Access API. Fonts load from Google Fonts online, with a monospace fallback offline.
+Vanilla HTML, CSS, and JavaScript: a single `index.html` plus a small SVG icon, no framework, no build step, no runtime dependencies. Storage is `localStorage` plus the optional File System Access API. Fonts load from Google Fonts online, with a monospace fallback offline.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Disclaimer
+
+Leaf Ledger is fan-made and is not affiliated with Nexon or MapleStory.
 
 ## Notes
 
