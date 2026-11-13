@@ -2,6 +2,8 @@
 
 **Scout your next PvP opponent before you challenge.** A **local-first web app** for tracking MapleStory Idle RPG PvP.
 
+**[Open the live app](https://joshuaonsc.github.io/leaf-ledger/)**: nothing to install, and your log stays in your browser.
+
 [![checks](https://github.com/joshuaonsc/leaf-ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/joshuaonsc/leaf-ledger/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-38c6de.svg)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-93cf46.svg)
@@ -21,10 +23,11 @@ Late-game, an opponent's combat power stops telling you whether they've stacked 
 
 ## Run it
 
-No build step, no dependencies, no server. Either:
+No build step, no dependencies, no server. Any of:
 
-- **Open locally:** double-click `index.html` (opens in your browser), or
-- **Host on GitHub Pages:** push to a repo → Settings → Pages → deploy from branch → root. You get a stable URL, which also gives more reliable `localStorage` than the `file://` origin some browsers restrict.
+- **Use the hosted copy:** open [joshuaonsc.github.io/leaf-ledger](https://joshuaonsc.github.io/leaf-ledger/). Only the app is hosted; your log never leaves your browser.
+- **Open locally:** download the repo and double-click `index.html` (opens in your browser).
+- **Host your own:** fork the repo, then Settings → Pages → deploy from branch → root. You get a stable URL, which also gives more reliable `localStorage` than the `file://` origin some browsers restrict.
 
 > **Browser note:** runs in any modern browser, but it's best in a **Chromium browser (Chrome or Edge)**. Only there can you use **Link DB file** to bind a `.json` and autosave every change straight to disk for easy backups. It needs the File System Access API, which Safari and Firefox don't implement. Everywhere else, the always-on `localStorage` autosave plus manual JSON Import/Export still have your data covered.
 
@@ -53,7 +56,7 @@ Three values act as universal "missing data" sentinels: class **Unknown**, level
 
 ## Data & storage
 
-Data is stored in your browser's `localStorage` under the key `leafledger_v1`. It is **per-browser and per-origin**. That layer is always on and saves automatically on every change. If a save ever fails, because storage is blocked or full or the linked file can't be written, a warning appears above the log with the reason and stays until saving works again.
+Data is stored in your browser's `localStorage` under the key `leafledger_v1`. It is **per-browser and per-origin**: the hosted copy, a local `index.html`, and each machine or browser you use all keep separate logs, and nothing syncs between them. To carry a log from one to another, Export on the first and Import on the second. Browser storage is always on and saves automatically on every change. If a save ever fails, because storage is blocked or full or the linked file can't be written, a warning appears above the log with the reason and stays until saving works again.
 
 ### Autosave to a file on disk
 
