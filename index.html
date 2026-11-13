@@ -656,7 +656,8 @@
       id: editingId || uid(),
       username,
       className: $("#f_class").value,
-      level: levelRaw === "" ? 0 : parseInt(levelRaw, 10),
+      // Number, not parseInt: a number field accepts "1e2", which parseInt reads as 1.
+      level: levelRaw === "" ? 0 : Number(levelRaw),
       outcome,
       date: $("#f_date").value || todayStr(),
       evasion: $("#f_evasion").checked,
