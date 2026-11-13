@@ -373,6 +373,7 @@
     "Night Lord": ["nl"]
   };
 
+  let skippedOnLoad = 0; // stored items load() left out because they were not records
   let records = load();
   let outcome = null;
   let editingId = null;
@@ -392,7 +393,16 @@
       const raw = localStorage.getItem(KEY);
       if (!raw) return [];
       const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : [];
+      if (!Array.isArray(arr)) return [];
+      // Storage is not validated record by record: older records with odd
+      // fields stay, and the consumers render what they cannot read as unknown.
+      // But an item that is not an object at all (a hand-edited null, a number,
+      // a nested array) is not a record, and a single null used to stop the
+      // whole page from rendering. Leave those out, and say so after the first
+      // render (see the end of this script) rather than absorbing it silently.
+      const kept = arr.filter((r) => r !== null && typeof r === "object" && !Array.isArray(r));
+      skippedOnLoad = arr.length - kept.length;
+      return kept;
     } catch (e) { console.error("load failed", e); return []; }
   }
   function save() {
@@ -724,7 +734,8 @@
     const matches = records.filter((r) => unameKey(r).includes(q));
     if (!matches.length) {
       box.style.display = "flex";
-      box.innerHTML = '<div class="verdict favorable"><span class="badge" style="background:rgba(166,173,181,0.16);color:var(--text-dim)">NO RECORD</span>'
+      // No verdict class here: an unknown name gets the neutral stripe, not the FAVORABLE green.
+      box.innerHTML = '<div class="verdict"><span class="badge" style="background:rgba(166,173,181,0.16);color:var(--text-dim)">NO RECORD</span>'
         + '<span class="who">No logged matches against <b>' + esc(q) + "</b>.</span>"
         + '<span class="meta">First time seeing this name, as far as your log knows.</span></div>';
       return;
@@ -1046,6 +1057,15 @@
   render();
   renderIO();
   initDb();
+
+  // Stored items that load() left out: tell the user once the page has painted,
+  // so the readable records are already on screen behind the notice.
+  if (skippedOnLoad) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      alert("Skipped " + skippedOnLoad + " stored item(s) that are not match records.\n"
+        + "They stay in browser storage until the next save, which removes them.");
+    }));
+  }
 })();
 </script>
 </body>
