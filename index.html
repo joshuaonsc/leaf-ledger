@@ -354,6 +354,7 @@
 (function () {
   "use strict";
   const KEY = "leafledger_v1";
+  const UNREADABLE_KEY = KEY + "_unreadable"; // where load() parks a stored log it could not read
   const $ = (s) => document.querySelector(s);
 
   // 12 canonical classes shown in the UI (full names only).
@@ -373,7 +374,7 @@
     "Night Lord": ["nl"]
   };
 
-  let skippedOnLoad = 0; // stored items load() left out because they were not records
+  const loadNotices = []; // what load() had to work around; shown once after the first paint
   let records = load();
   let outcome = null;
   let editingId = null;
@@ -388,22 +389,48 @@
   let storedHandleName = "";
 
   /* ---------- storage ---------- */
+  // Nothing here fails silently: whatever load() has to work around goes into
+  // loadNotices, which is shown once the page has painted (see the end of this script).
   function load() {
+    let raw;
+    try { raw = localStorage.getItem(KEY); }
+    catch (e) { console.error("load failed", e); return []; } // storage itself is unavailable
+    if (!raw) return [];
+
+    let arr, why = "";
     try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return [];
-      const arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return [];
-      // Storage is not validated record by record: older records with odd
-      // fields stay, and the consumers render what they cannot read as unknown.
-      // But an item that is not an object at all (a hand-edited null, a number,
-      // a nested array) is not a record, and a single null used to stop the
-      // whole page from rendering. Leave those out, and say so after the first
-      // render (see the end of this script) rather than absorbing it silently.
-      const kept = arr.filter((r) => r !== null && typeof r === "object" && !Array.isArray(r));
-      skippedOnLoad = arr.length - kept.length;
-      return kept;
-    } catch (e) { console.error("load failed", e); return []; }
+      arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) why = "it is not a list of records";
+    } catch (e) { why = e && e.message ? e.message : String(e); }
+    if (why) {
+      // The stored log cannot be used (a hand edit gone wrong, most likely).
+      // Starting empty is the only option, but the next save would overwrite
+      // what is there. So park the unreadable text under its own key first,
+      // where it can be copied out, repaired, and brought back through Import.
+      let parked = true;
+      try { if (localStorage.getItem(UNREADABLE_KEY) !== raw) localStorage.setItem(UNREADABLE_KEY, raw); }
+      catch (e) { parked = false; }
+      console.error("load failed: " + why);
+      loadNotices.push("The stored log could not be read (" + why + ").\nThe log starts empty. "
+        + (parked
+          ? 'The unreadable data was kept in browser storage under "' + UNREADABLE_KEY + '".\n'
+            + "To recover it, copy that text into a .json file, repair it, and use Import."
+          : "A copy could not be kept, and the next save will replace the unreadable data."));
+      return [];
+    }
+
+    // Storage is not validated record by record: older records with odd
+    // fields stay, and the consumers render what they cannot read as unknown.
+    // But an item that is not an object at all (a hand-edited null, a number,
+    // a nested array) is not a record, and a single null used to stop the
+    // whole page from rendering. Leave those out, and say so.
+    const kept = arr.filter((r) => r !== null && typeof r === "object" && !Array.isArray(r));
+    const skipped = arr.length - kept.length;
+    if (skipped) {
+      loadNotices.push("Skipped " + skipped + " stored item(s) that are not match records.\n"
+        + "They stay in browser storage until the next save, which removes them.");
+    }
+    return kept;
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(records)); }
@@ -656,7 +683,8 @@
       id: editingId || uid(),
       username,
       className: $("#f_class").value,
-      level: levelRaw === "" ? 0 : parseInt(levelRaw, 10),
+      // Number, not parseInt: a number field accepts "1e2", which parseInt reads as 1.
+      level: levelRaw === "" ? 0 : Number(levelRaw),
       outcome,
       date: $("#f_date").value || todayStr(),
       evasion: $("#f_evasion").checked,
@@ -1058,13 +1086,10 @@
   renderIO();
   initDb();
 
-  // Stored items that load() left out: tell the user once the page has painted,
+  // Whatever load() had to work around: tell the user once the page has painted,
   // so the readable records are already on screen behind the notice.
-  if (skippedOnLoad) {
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      alert("Skipped " + skippedOnLoad + " stored item(s) that are not match records.\n"
-        + "They stay in browser storage until the next save, which removes them.");
-    }));
+  if (loadNotices.length) {
+    requestAnimationFrame(() => requestAnimationFrame(() => alert(loadNotices.join("\n\n"))));
   }
 })();
 </script>
