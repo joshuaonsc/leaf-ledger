@@ -724,7 +724,8 @@
     const matches = records.filter((r) => unameKey(r).includes(q));
     if (!matches.length) {
       box.style.display = "flex";
-      box.innerHTML = '<div class="verdict favorable"><span class="badge" style="background:rgba(166,173,181,0.16);color:var(--text-dim)">NO RECORD</span>'
+      // No verdict class here: an unknown name gets the neutral stripe, not the FAVORABLE green.
+      box.innerHTML = '<div class="verdict"><span class="badge" style="background:rgba(166,173,181,0.16);color:var(--text-dim)">NO RECORD</span>'
         + '<span class="who">No logged matches against <b>' + esc(q) + "</b>.</span>"
         + '<span class="meta">First time seeing this name, as far as your log knows.</span></div>';
       return;
